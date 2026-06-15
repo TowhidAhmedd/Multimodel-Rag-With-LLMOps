@@ -1,0 +1,44 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# ── Virtual environments ──────────────────────────────────────────────────────
+venv/
+.venv/
+env/
+
+# ── Dev / editor ─────────────────────────────────────────────────────────────
+.git/
+.gitignore
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# ── Secrets / env files ───────────────────────────────────────────────────────
+.env
+*.env.local
+
+# ── Uploads & generated data (use named volumes instead) ─────────────────────
+storage/uploads/
+!storage/uploads/.gitkeep
+
+# ── Model cache (baked into image via Dockerfile) ────────────────────────────
+.model_cache/
+
+# ── Test artefacts ────────────────────────────────────────────────────────────
+tests/
+pytest.ini
+htmlcov/
+.coverage
+
+# ── Docs ──────────────────────────────────────────────────────────────────────
+README.md
