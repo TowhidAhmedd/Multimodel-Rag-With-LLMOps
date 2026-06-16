@@ -3,14 +3,17 @@ backend/api/routes.py
 FastAPI route handlers – upload, query, health, metrics, cache management.
 """
 
+import asyncio
 import uuid
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
 
 from backend.api.schemas import (
+    AsyncUploadResponse,
     HealthResponse,
+    JobStatusResponse,
     MetricsResponse,
     QueryRequest,
     QueryResponse,
@@ -27,6 +30,9 @@ from backend.vectorstore import get_db, VectorStoreSession
 logger = get_logger(__name__)
 settings = get_settings()
 router = APIRouter()
+
+# In-process job store (safe with --workers 1; swap for Redis if you scale)
+_JOBS: dict[str, dict] = {}
 
 ALLOWED_EXTENSIONS: set[str] = DOCUMENT_EXTS | AUDIO_EXTS | VIDEO_EXTS
 MAX_SIZE_BYTES: int = settings.max_upload_size_mb * 1024 * 1024
@@ -119,6 +125,95 @@ async def upload_file(
         modality=result.get("modality", "unknown"),
         message=result.get("message"),
     )
+
+
+# ─── POST /upload-async ───────────────────────────────────────────────────────
+
+@router.post(
+    "/upload-async",
+    response_model=AsyncUploadResponse,
+    summary="Upload and ingest a file asynchronously (returns job_id immediately)",
+)
+async def upload_file_async(
+    file: UploadFile = File(...),
+    session: VectorStoreSession = Depends(get_db),
+) -> AsyncUploadResponse:
+    """
+    Accepts the file, saves it to disk, starts ingestion in the background,
+    and immediately returns a job_id.  Poll GET /jobs/{job_id} for the result.
+
+    Use this endpoint on Render (or any platform with a short HTTP timeout)
+    instead of POST /upload.
+    """
+    original_name = file.filename or "unknown"
+    _validate_extension(original_name)
+    safe_name = _sanitize_filename(original_name)
+
+    upload_dir = Path(settings.upload_dir)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    unique_name = f"{uuid.uuid4().hex}_{safe_name}"
+    save_path = upload_dir / unique_name
+
+    # Stream file to disk (must finish before we return the response)
+    total_bytes = 0
+    try:
+        with open(save_path, "wb") as f:
+            while True:
+                chunk = await file.read(1024 * 1024)
+                if not chunk:
+                    break
+                total_bytes += len(chunk)
+                if total_bytes > MAX_SIZE_BYTES:
+                    raise HTTPException(
+                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                        detail=f"File exceeds the maximum allowed size of {settings.max_upload_size_mb} MB.",
+                    )
+                f.write(chunk)
+    except HTTPException:
+        if save_path.exists():
+            save_path.unlink()
+        raise
+    except Exception as exc:
+        if save_path.exists():
+            save_path.unlink()
+        logger.error("File write failed (async upload)", extra={"error": str(exc), "file": safe_name})
+        raise HTTPException(status_code=500, detail=f"Failed to save file: {exc}")
+
+    job_id = uuid.uuid4().hex
+    _JOBS[job_id] = {"status": "running", "source_file": safe_name}
+
+    # Run ingestion in background – response is already on its way to the client
+    async def _run(path: str, s: VectorStoreSession, jid: str) -> None:
+        try:
+            result = await run_ingestion_pipeline(path, s)
+            _JOBS[jid].update(
+                status="done",
+                chunk_count=result.get("chunk_count", 0),
+                modality=result.get("modality", "unknown"),
+            )
+            logger.info("Async ingestion complete", extra={"job_id": jid, "file": path})
+        except Exception as exc:
+            _JOBS[jid].update(status="error", error=str(exc))
+            logger.error("Async ingestion failed", extra={"job_id": jid, "error": str(exc)})
+
+    asyncio.ensure_future(_run(str(save_path), session, job_id))
+
+    return AsyncUploadResponse(job_id=job_id)
+
+
+# ─── GET /jobs/{job_id} ───────────────────────────────────────────────────────
+
+@router.get(
+    "/jobs/{job_id}",
+    response_model=JobStatusResponse,
+    summary="Poll the status of an async ingestion job",
+)
+async def get_job_status(job_id: str) -> JobStatusResponse:
+    """Returns the current status of a background ingestion job."""
+    job = _JOBS.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
+    return JobStatusResponse(job_id=job_id, **job)
 
 
 # ─── POST /query ─────────────────────────────────────────────────────────────

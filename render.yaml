@@ -1,0 +1,42 @@
+services:
+  # ── Backend ──────────────────────────────────────────────────────────────────
+  - type: web
+    name: multimodel-rag-with-llmops-backend
+    runtime: docker
+    dockerfilePath: ./docker/Dockerfile.backend
+    # Point health-check at /health so Render doesn't time-out on startup
+    healthCheckPath: /health
+    # Increase Render's timeout for the service (in seconds).
+    # NOTE: Render's free plan still enforces a 30s HTTP timeout at the edge.
+    # Upgrade to a paid plan or use the async /upload-async endpoint to avoid it.
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false          # set via Render dashboard "Secret" env var
+      - key: PINECONE_API_KEY
+        sync: false
+      - key: PINECONE_INDEX_NAME
+        sync: false
+      - key: PINECONE_CLOUD
+        value: aws
+      - key: PINECONE_REGION
+        value: us-east-1
+      - key: LANGSMITH_API_KEY
+        sync: false
+      - key: LANGSMITH_TRACING_V2
+        value: "true"
+      - key: LANGSMITH_PROJECT
+        value: multimodal-rag
+      - key: LOG_LEVEL
+        value: INFO
+      - key: MAX_UPLOAD_SIZE_MB
+        value: "50"          # keep small – Render proxy caps at 100 MB anyway
+
+  # ── Frontend ─────────────────────────────────────────────────────────────────
+  - type: web
+    name: multimodel-rag-with-llmops-frontend
+    runtime: python
+    buildCommand: pip install streamlit requests
+    startCommand: streamlit run frontend/streamlit_app.py --server.port $PORT --server.address 0.0.0.0
+    envVars:
+      - key: BACKEND_URL
+        value: https://multimodel-rag-with-llmops-backend.onrender.com

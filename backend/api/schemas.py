@@ -17,6 +17,23 @@ class UploadResponse(BaseModel):
     message: Optional[str] = None
 
 
+class AsyncUploadResponse(BaseModel):
+    """Returned immediately by POST /upload-async – job runs in the background."""
+    job_id: str
+    status: str = "queued"
+    message: str = "File received. Ingestion started in background."
+
+
+class JobStatusResponse(BaseModel):
+    """Returned by GET /jobs/{job_id}."""
+    job_id: str
+    status: str                          # queued | running | done | error
+    source_file: Optional[str] = None
+    chunk_count: Optional[int] = None
+    modality: Optional[str] = None
+    error: Optional[str] = None
+
+
 # ─── Query ────────────────────────────────────────────────────────────────────
 
 class QueryRequest(BaseModel):
