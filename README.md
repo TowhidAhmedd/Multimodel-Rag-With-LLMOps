@@ -1,3 +1,9 @@
+
+# 🎥 Demo Video
+
+[![Watch Demo](https://img.youtube.com/vi/tHPU-L5qwq8/maxresdefault.jpg)](https://www.youtube.com/watch?v=tHPU-L5qwq8)
+
+
 # 🧠 Multimodal RAG with LangSmith & pgvector
 
 A production-style **Multimodal Retrieval-Augmented Generation (RAG)** application that lets you upload documents, audio, and video files, then ask grounded questions answered **strictly from your uploaded content** — no hallucinations.
