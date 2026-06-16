@@ -154,14 +154,14 @@ if __name__ == "__main__":
 
     # Local run only
     # Production uses Docker CMD:
-    # uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    uvicorn backend.main:app --host 0.0.0.0 --port $PORT
 
-    uvicorn.run(
-        "backend.main:app",
-        host="0.0.0.0",
-        port=8000,
-        log_level="info"
-    )
+    # uvicorn.run(
+    #     "backend.main:app",
+    #     host="0.0.0.0",
+    #     port=8000,
+    #     log_level="info"
+    # )
     
 # """
 # FIXED frontend/streamlit_app.py
