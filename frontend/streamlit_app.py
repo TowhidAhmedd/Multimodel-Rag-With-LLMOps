@@ -45,7 +45,7 @@ st.markdown("""
   .main-header  { font-size:2.2rem; font-weight:700; color:#1a1a2e; margin-bottom:.2rem; }
   .sub-header   { font-size:1rem;   color:#555;       margin-bottom:1.5rem; }
   .chunk-card   {
-    background:#fafafa; border:1px solid #e0e0e0; border-radius:8px;
+    background:#1e1e1e; border:1px solid #e0e0e0; border-radius:8px;
     padding:12px; margin-bottom:8px; font-size:.88rem; line-height:1.5;
   }
   .source-badge {
