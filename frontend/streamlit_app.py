@@ -77,17 +77,57 @@ with st.sidebar:
 
     st.divider()
     st.header("🔗 System Status")
+    # try:
+    #     health = requests.get(f"{BACKEND_URL}/health", timeout=5).json()
+    #     status_icon = "🟢" if health.get("status") == "ok" else "🟡"
+    #     st.markdown(f"{status_icon} Backend **{health.get('status', '?')}**")
+    #     st.caption(f"DB: {health.get('database', '?')}")
+    #     st.caption(f"Embed model: {health.get('embedding_model', '?')}")
+    # except requests.exceptions.ConnectionError:
+    #     st.error("⛔ Backend unreachable")
+    #     st.caption(f"Trying: {BACKEND_URL}")
+    # except Exception as exc:
+    #     st.warning(f"Status check failed: {exc}")
+
+    # ============================================
+    
     try:
-        health = requests.get(f"{BACKEND_URL}/health", timeout=5).json()
-        status_icon = "🟢" if health.get("status") == "ok" else "🟡"
-        st.markdown(f"{status_icon} Backend **{health.get('status', '?')}**")
-        st.caption(f"DB: {health.get('database', '?')}")
-        st.caption(f"Embed model: {health.get('embedding_model', '?')}")
+        response = requests.get(
+            f"{BACKEND_URL}/health",
+            timeout=5
+        )
+    
+        if response.status_code == 200:
+            health = response.json()
+    
+            status_icon = "🟢" if health.get("status") == "ok" else "🟡"
+    
+            st.markdown(
+                f"{status_icon} Backend **{health.get('status', '?')}**"
+            )
+    
+            st.caption(f"DB: {health.get('database', '?')}")
+            st.caption(
+                f"Embed model: {health.get('embedding_model', '?')}"
+            )
+    
+        else:
+            st.error(
+                f"Backend health failed: HTTP {response.status_code}"
+            )
+            st.caption(response.text[:200])
+    
+    
     except requests.exceptions.ConnectionError:
         st.error("⛔ Backend unreachable")
         st.caption(f"Trying: {BACKEND_URL}")
+    
+    
     except Exception as exc:
         st.warning(f"Status check failed: {exc}")
+
+    
+    #==========================================
 
     st.divider()
     st.header("📊 Cache")
