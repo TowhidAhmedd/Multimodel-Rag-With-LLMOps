@@ -9,7 +9,7 @@
 A production-style **Multimodal Retrieval-Augmented Generation (RAG)** application that lets you upload documents, audio, and video files, then ask grounded questions answered **strictly from your uploaded content** — no hallucinations.
 
 ---
-## Architecture ff
+## Architecture
 ```mermaid
 
 flowchart TD
@@ -26,7 +26,7 @@ flowchart TD
 
     ING --> CHUNK[Chunking Engine]
     CHUNK --> EMB[Embedding Service - BGE-small]
-    EMB --> DB[(PostgreSQL + pgvector)]
+    EMB --> DB[(Pinecone)]
 
     RET --> QEMB[Query Embedding]
     QEMB --> SEARCH[Vector Search]
