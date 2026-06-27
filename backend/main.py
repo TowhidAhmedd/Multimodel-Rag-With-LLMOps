@@ -44,22 +44,22 @@ async def lifespan(app: FastAPI):
     """
 
     try:
-        logger.info("🚀 Starting Multimodal RAG backend")
+        logger.info("Starting Multimodal RAG backend")
 
         await init_db()
 
-        logger.info("✅ Vector database ready")
+        logger.info("Vector database ready")
 
     except Exception as exc:
         logger.error(
-            f"❌ Startup failed: {exc}",
+            f"Startup failed: {exc}",
             exc_info=True
         )
         raise
 
     yield
 
-    logger.info("🛑 Shutting down Multimodal RAG backend")
+    logger.info("Shutting down Multimodal RAG backend")
 
 
 # ─────────────────────────────────────────────
