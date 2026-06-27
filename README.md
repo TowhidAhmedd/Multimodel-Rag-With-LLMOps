@@ -9,7 +9,7 @@
 A production-style **Multimodal Retrieval-Augmented Generation (RAG)** application that lets you upload documents, audio, and video files, then ask grounded questions answered **strictly from your uploaded content** — no hallucinations.
 
 ---
-## Architecture
+## Architecture ff
 ```mermaid
 
 flowchart TD
