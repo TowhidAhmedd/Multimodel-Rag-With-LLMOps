@@ -9,7 +9,47 @@
 A production-style **Multimodal Retrieval-Augmented Generation (RAG)** application that lets you upload documents, audio, and video files, then ask grounded questions answered **strictly from your uploaded content** — no hallucinations.
 
 ---
+## Architecture
+```mermaid
 
+flowchart TD
+
+    UI[Streamlit Frontend] --> API[FastAPI Gateway]
+
+    API --> AUTH[Auth / Rate Limiter]
+    AUTH --> ORCH[RAG Orchestrator]
+
+    ORCH --> ING[Ingestion Service]
+    ORCH --> RET[Retrieval Service]
+    ORCH --> LLM[LLM Service]
+    ORCH --> OBS[Observability Service]
+
+    ING --> CHUNK[Chunking Engine]
+    CHUNK --> EMB[Embedding Service - BGE-small]
+    EMB --> DB[(PostgreSQL + pgvector)]
+
+    RET --> QEMB[Query Embedding]
+    QEMB --> SEARCH[Vector Search]
+    SEARCH --> DB
+    SEARCH --> RERANK[Cross Encoder Re-ranker]
+
+    RERANK --> PROMPT[Prompt Builder]
+    PROMPT --> LLM_API[Groq LLM API]
+
+    LLM_API --> OBS
+
+    OBS --> LANGSMITH[LangSmith Tracing]
+    OBS --> METRICS[Evaluation Metrics Engine]
+
+    LLM_API --> RESPONSE[Structured Response API]
+
+    RESPONSE --> UI
+
+    
+```
+
+
+<!--
 ## 🏗️ Architecture
 
 ```
@@ -55,6 +95,7 @@ Pipeline              Pipeline                   & Logging
                  Structured Response
           (Answer + Sources + Metrics)
 ```
+-->
 
 ---
 
